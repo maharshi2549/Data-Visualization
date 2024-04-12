@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Visualization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            /* Soft gray background */
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            /* White background for container */
+            border-radius: 10px;
+            /* Rounded corners */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            /* Soft shadow */
+        }
+
+        .info {
+            margin-bottom: 30px;
+        }
+
+        .info h2 {
+            color: #007bff;
+            /* Blue header */
+            margin-bottom: 10px;
+        }
+
+        .info p {
+            color: #555;
+            /* Gray text */
+        }
+
+        iframe {
+            width: 100%;
+            border: none;
+        }
+
+        .code-container {
+            display: none;
+            padding: 20px;
+            background-color: #f3f4f6;
+            /* Light gray background for code */
+            border-radius: 5px;
+            overflow-x: auto;
+            /* Enable horizontal scrolling */
+        }
+    </style>
+    <script>
+        function toggleCode(codeId) {
+            var codeContainer = document.getElementById(codeId);
+            if (codeContainer.style.display === "none") {
+                codeContainer.style.display = "block";
+            } else {
+                codeContainer.style.display = "none";
+            }
+        }
+    </script>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="info">
+            <h2>About Dataset</h2>
+            <p>This is a transnational data set containing all transactions occurring between 01/12/2010 and 09/12/2011
+                for a UK-based and registered non-store online retail.</p>
+        </div>
+        <div class="info">
+            <h2>Source</h2>
+            <p><a href="http://archive.ics.uci.edu/dataset/352/online+retail" target="_blank">UCI Machine Learning
+                    Repository</a></p>
+        </div>
+        <div class="info">
+            <h2>Cleaned Data Source</h2>
+            <p><a href="https://www.kaggle.com/datasets/atanaskanev/online-retail-business-cleaned-dataset"
+                    target="_blank">Kaggle</a></p>
+        </div>
+        <div class="info">
+            <h2>Data Sample</h2>
+            <button onclick="toggleCode('code1')">View Code</button>
+            <div id="code1" class="code-container">
+                <pre><code>
+                # Libraries
+                !pip install mpld3
+                import mpld3
+                import numpy as np
+                import pandas as pd
+                import matplotlib.pyplot as plt
+                import seaborn as sns  # Just for some data
+                from plotnine import ggplot, geom_point, aes, stat_smooth, facet_wrap
+                import plotnine
+                from plotnine import *
+                from plotnine import ggplot, geom_boxplot, aes, theme, element_text, element_blank, scale_y_log10, labs, element_rect, guides, scale_color_manual
+                from plotnine.themes import theme_minimal
+                from plotnine.geoms import geom_hline, geom_jitter
+                from plotnine.scales import scale_fill_brewer
+                from plotnine import facet_wrap
+                from mizani.breaks import date_breaks
+                import plotly.express as px # used for interactive visualizations
+                import plotly.graph_objects as go
+                from plotly.offline import plot
+                from plotly.offline import init_notebook_mode, iplot # plot plotly graphs in line in a notebook
+                import pycountry
+                import calendar
+
+                import warnings        
+                warnings.filterwarnings("ignore") # ignores warnings
+
+                data = pd.read_csv('online_retail_cleaned.csv')
+                data.head(10)
+            </code></pre>
+            </div>
+            <iframe style="height: 480px;" src="table_head.html" title="Online Retail Table"></iframe>
+        </div>
+        <div class="info">
+            <h2>Visualizing the Sales by Country (Pie Chart) using plotly</h2>
+            <button onclick="toggleCode('code2')">View Code</button>
+            <div id="code2" class="code-container">
+                <pre><code>
+                # calculate total sales by country
+                country_sales = pd.DataFrame(data.groupby("Country") \
+                ["ItemTotal"].sum()).reset_index().rename({"ItemTotal":"TotalSales"},axis=1)
+                fig = px.pie(country_sales,
+                            values="TotalSales",
+                            names="Country",
+                            title="Percent of Total Sales by Country",
+                            color_discrete_sequence=px.colors.qualitative.G10
+                            )
+
+                fig.update_traces(
+                                textposition="inside",
+                                textinfo="percent+label"
+                                )
+                fig.update_layout(
+                                margin=dict(l=20, r=70, b=20, t=90, pad=0),
+                                titlefont=dict(size=20),
+                                width=800,  
+                                height=600  
+                                )
+
+                # Save the animation as an HTML file
+                plot(fig, filename='Percent of Total Sales by Country.html', auto_open=False)
+
+                iplot(fig)
+            </code></pre>
+            </div>
+            <iframe style="height: 620px;" src="Percent of Total Sales by Country.html"
+                title="Sales by Country"></iframe>
+            <p><strong>Major Contribution:</strong> We can see that the UK has a major contribution towards sales.</p>
+            <p>Now, We will plot this map without the UK sales since it would skew the scale due to its predominant
+                share of sales.</p>
+        </div>
+        <div class="info">
+            <h2>Visualizing the Sales by Country (Bar plot) using plotnine</h2>
+            <button onclick="toggleCode('code3')">View Code</button>
+            <div id="code3" class="code-container">
+                <pre><code>
+                    # also drop "Unspecified" and "European Community" since they cannot be mapped
+                    country_sales = country_sales[country_sales["Country"] \
+                    .isin(["Unspecified", "European Community","United Kingdom"]) == False]
+
+                    # Create bar plot using Plotnine
+                    bar_plot = (
+                        ggplot(country_sales, aes(x='Country', y='TotalSales', fill='Country')) +
+                        geom_bar(stat='identity') +
+                        labs(title="Total Sales by Country") +
+                        theme_minimal() +
+                        theme(axis_text_x=element_text(angle=90, hjust=1),
+                            legend_position='bottom',
+                            figure_size=(10, 10)) 
+                    )
+
+                    bar_plot.save("bar_plot.jpg")
+
+                    bar_plot.show()
+            </code></pre>
+            </div>
+            <iframe style="height: 1000px;" src="bar_plot.jpg" title="Sales by Country"></iframe>
+        </div>
+        <div class="info">
+            <h2>Visualizing the Sales by Country (Map)using plotly</h2>
+            <button onclick="toggleCode('code4')">View Code</button>
+            <div id="code4" class="code-container">
+                <pre><code>
+                    # rename countries into names which are recognised by plotly
+                    country_sales["Country"] = \
+                    country_sales["Country"].replace({"EIRE": "Ireland",
+                                                      "Channel Islands": "United Kingdom",
+                                                      "RSA": "South Africa"})
+
+                    # https://stackoverflow.com/questions/59812824/plotly-express-plot-not-shown-in-jupyter-notebook
+                    choro_data = dict(
+                                    type = "choropleth",
+                                    colorscale = "Agsunset",
+                                    locations = country_sales["Country"],
+                                    locationmode = "country names",
+                                    z = country_sales["TotalSales"].astype(float).round(0).tolist(),
+                                    hovertext = country_sales["Country"],
+                                    hovertemplate = "%{hovertext}: £%{z:,.0f} <extra></extra>",
+                                    # https://stackoverflow.com/questions/59057881/python-plotly-how-to-customize-hover-template-on-with-what-information-to-show
+                                    colorbar = {"title" : "Total Sales", },
+                                    ) 
+                    
+                    layout = dict(
+                                title = "Total Sales By Country Excluding the UK",
+                                titlefont = dict(size = 20),
+                                geo = dict(showframe = False, bgcolor = "#BAEAED",),
+                                margin={"r":0,"t":50,"l":10,"b":0}  
+                                )
+                    
+                    fig = go.Figure(data=choro_data, layout=layout)
+                    
+                    # Save the animation as an HTML file
+                    plot(fig, filename='total_sales_map.html', auto_open=False)
+                    
+                    # fig.update_traces(visible = True)
+                    iplot(fig)
+            </code></pre>
+            </div>
+            <iframe style="height: 620px;" src="total_sales_map.html" title="Sales by Country"></iframe>
+        </div>
+        <div class="info">
+            <h2>Overall sales trend (using plotnine)</h2>
+            <button onclick="toggleCode('code6')">View Code</button>
+            <div id="code6" class="code-container">
+                <pre><code>
+                    # create columns extracting the year and month of InvoiceDates
+                    data["year"], data["month"] = data["InvoiceDate"].dt.year, data["InvoiceDate"].dt.month
+
+                    sales = data.groupby(["year","month"])["ItemTotal"].sum() \
+                    .reset_index().rename({"ItemTotal":"TotalSales"},axis=1)
+
+                    # create rows about April 2010 and November 2010 with averages from preceding and following month 
+                                                                                                  
+                    new_rows = pd.DataFrame({"year":[2010,2010],
+                                            "month": [4,11],
+                                            "TotalSales": [38123.21,184980.04]},
+                                            index = [98,99]) # arbitrary indexes
+
+                    # insert the row in the sales table
+                    sales = pd.concat([new_rows, sales]) \
+                    .sort_values(by=["year","month"]).reset_index(drop=True)
+
+                    # convert numbers into month names
+                    sales["month"] = sales["month"].apply(lambda x: calendar.month_abbr[x])
+
+                    # combine month and year
+                    sales["month"] = sales["month"].astype(str) + " " + sales["year"].astype(str)
+
+                    # drop the redundant year column
+                    sales = sales.drop("year", axis = 1) 
+
+                    sales = sales[0:23] # drop December 2011 since the data does not cover the whole month
+
+                    # Define the order of months as they appear in the DataFrame
+                    month_order = sales['month'].tolist()
+
+                    # Create line chart using Plotnine
+                    line_chart = (
+                        ggplot(sales, aes(x='month', y='TotalSales', group='factor(month.str[:0])')) +  # Group by year
+                        geom_line(color='purple', size=1.5) +
+                        geom_point(color='purple', size=3) +
+                        labs(title="Total Sales by Month",
+                            x="Month",
+                            y="Total Sales (in £)") +
+                        theme_minimal() +
+                        theme(axis_text_x=element_text(angle=45, hjust=1)) +
+                        scale_x_discrete(limits=month_order)  # Set the order of x-axis ticks
+                    )
+
+                    line_chart.save("line_plot.jpg")
+                    line_chart.show()
+            </code></pre>
+            </div>
+            <iframe style="height: 500px;" src="line_plot.jpg" title="Sales by Country"></iframe>
+            <p><strong>Conclusion : </strong>We can see a clear upward trend with initial sharp increses towards the end
+                of 2010 and the beginning of 2011. Let's investigate whether the number of customers in each month
+                exhibit a similar trend.</p>
+        </div>
+        <div class="info">
+            <h2>How Many Customers Purchased Products Each Month and How Many New Customers were There Each Month?</h2>
+            <button onclick="toggleCode('code7')">View Code using plotly</button>
+            <div id="code7" class="code-container">
+                <pre><code>
+                    customers = data[data["CustomerID"].notna()].groupby(["year", "month"]) \
+                    .agg({"CustomerID": "unique"}) \
+                    .reset_index().rename({"CustomerID": "unique_customer_ids"}, axis = 1)
+                    
+                    # calculate the number of unique customers and insert it as a column
+                    customers.insert(2,"unique_customers_this_month", customers["unique_customer_ids"].str.len())
+
+                    ids = []
+
+                    # creates a running list of customerids up to each month
+                    for index, row in customers.iterrows(): 
+                        if index == 0:
+                            ids.append(row["unique_customer_ids"].tolist())
+                            
+                        else:   # adds the present ids to the accumulated list of previous ids
+                            ids.append(row["unique_customer_ids"].tolist() + ids[index-1])
+
+                    total_customers = []
+                    for i in range(len(ids)):
+                        total_customers.append(len(set(ids[i]))) # the set removes duplicates  
+                        
+                    # insert as a column
+                    customers.insert(3, "total_customers", total_customers)
+
+                    # add the first difference of total_customers
+
+                    customers.insert(3, "new_customers_this_month", customers["total_customers"].diff() \
+                    .replace({np.nan: 98}).astype(int)) # fill in the first value
+
+                    # drop the long lists of unique customers
+                    customers = customers.drop("unique_customer_ids", axis = 1)
+
+                    # create rows about April 2010 and November 2010 with averages from preceding and following months
+                    new_rows = \
+                    pd.DataFrame({"year":[2010,2010],
+                                "month": [4,11],
+                                "unique_customers_this_month": [65,271],
+                                "new_customers_this_month": [59,163],
+                                "total_customers": [288,803]}, index = [98,99]) # arbitrary indexes
+
+                    # insert the row in the customers table
+                    customers = pd.concat([new_rows, customers]) \
+                    .sort_values(by=["year","month"]).reset_index(drop=True)
+
+                    # convert numbers into month names
+                    customers["month"] = customers["month"].apply(lambda x: calendar.month_abbr[x])
+
+                    # combine month and year
+                    customers["month"] = customers["month"].astype(str) + " " + customers["year"].astype(str)
+
+                    # drop the redundant year column
+                    customers = customers.drop("year", axis = 1)
+
+                    customers = customers[0:23] # drop December 2011 since the data does not cover the whole month
+
+                    trace1 = go.Scatter(
+                                        x = customers["month"],
+                                        y = customers["unique_customers_this_month"],
+                                        mode = "lines+markers",
+                                        name = "Unique Customers This Month",
+                                        line = dict(width = 4),
+                                        marker = dict(
+                                                    size = 10,
+                                                    color = "#0E79B2"
+                                                    ),
+                                        hovertemplate = "%{x}<br>Unique Customers: %{y} <extra></extra>",
+                                    )
+                    trace2 = go.Scatter(
+                                        x = customers["month"],
+                                        y = customers["new_customers_this_month"],
+                                        mode = "lines+markers",
+                                        name = "New Customers This Month",
+                                        line = dict(width = 4),
+                                        marker = dict(
+                                                    size = 10,
+                                                    color = "rgba(242, 225, 39, 1)"
+                                                    ),
+                                        hovertemplate = "%{x}<br>New Customers: %{y} <extra></extra>",
+                                    )
+                    trace3 = go.Scatter(
+                                        x = customers["month"],
+                                        y = customers["total_customers"],
+                                        mode = "lines+markers",
+                                        name = "Total Customers",
+                                        line = dict(width = 4), 
+                                        marker = dict(
+                                                    size = 10,
+                                                    color = "rgba(242, 39, 127, 1)"
+                                                    ),
+                                        hovertemplate = "%{x}<br>Total Customers: %{y} <extra></extra>",
+                                    )
+
+                    line_data = [trace1, trace2, trace3]
+
+                    layout = dict(
+                                title = "Customers by Month",
+                                titlefont = dict(size = 20),
+                                margin=dict(l=10, r=50, b=10, t=70, pad=0),
+                                xaxis= dict(title= "Month",ticklen = 5,zeroline = False),
+                                yaxis= dict(title= "Number of Customers"),
+                                width=900,  
+                                height=600,
+                                legend=dict(
+                                            font = dict(size = 12),
+                                            yanchor = "top",
+                                            y=0.98,
+                                            x= 0.01
+                                            )
+                                )
+                    fig = dict(data = line_data, layout = layout)
+
+                    # Save the animation as an HTML file
+                    plot(fig, filename='total Customers each month.html', auto_open=False)
+
+                    iplot(fig)
+            </code></pre>
+            </div>
+            <button onclick="toggleCode('code8')">View Code using plotnine</button>
+            <div id="code8" class="code-container">
+                <pre><code>
+                    # Make a copy of customers DataFrame
+                    customers_ = customers.copy()
+                    
+                    # Convert "month" column to datetime type with specified format
+                    customers_['month'] = pd.to_datetime(customers_['month'], format='%b %Y')
+                    
+                    # Plot using Plotnine
+                    (ggplot(customers_)
+                     + aes(x='month')
+                     + geom_line(aes(y='new_customers_this_month'), color='blue', size=1, show_legend=True)
+                     + geom_point(aes(y='new_customers_this_month'), color='blue', size=2)
+                     + geom_line(aes(y='unique_customers_this_month'), color='red', size=1, show_legend=True)
+                     + geom_point(aes(y='unique_customers_this_month'), color='red', size=2)
+                     + labs(x='Month', y='Customers', color='Plot')
+                     + theme_bw()
+                     + theme(axis_text_x=element_text(rotation=90, hjust=0.5))
+                     + scale_x_datetime(date_breaks="1 month", date_labels="%b %Y")  
+                     + scale_y_continuous(breaks=range(0, max(customers_['unique_customers_this_month'])+1, 100)) 
+                     + scale_color_manual(values=["blue", "red"], labels=["New Customers", "Unique Customers"])
+                    )
+            </code></pre>
+            </div>
+            <p>We can check that invoices either have missing values for all CustomerIDs, or no CustomerIDs are missing.
+                Since we do not know how many customers have an NaN value for CustomerID, we drop records with missing
+                CustomerIDs for this analysis.</p>
+            <iframe style="height: 620px;" src="total Customers each month.html" title="Sales by Country"></iframe>
+            <p><strong>Observations:</strong></p>
+            <ul>
+                <li>We can see a significant jump in new customers around December 2010 and January 2011, likely related
+                    to the Christmas holidays.</li>
+                <li>We can see another spike in customers in November 2011, although there is no spike in new customers.
+                    This might suggest that customers were satisfied with their Christmas purchases in 2010, and are now
+                    coming back to the online store for their Christmas 2011 purchases.</li>
+                <li>We do infact see that the line chart of the number of total customers has a concave shape. In other
+                    words, the number of total customers is increasing at a descreasing rate. As commented above, this
+                    is directly related to the decreasing number of new customers.</li>
+            </ul>
+        </div>
+        <div class="info">
+            <h2>What Time During the Day Do Customers Make the Most Purchases?</h2>
+            <p><strong>Strategy:</strong></p>
+            <ul>
+                <li>We have seen spikes in sales around December 2010, which is likely related to the Christmas
+                    holidays. Since the last date of this dataset is December 2011 (which we assume is the present), we
+                    expect that the business would be running marketing campaigns for this year's Christmas holidays as
+                    well. Therefore, it would be useful to find out what time of day customers make the most purchases
+                    in order to target the marketing campaigns around these times.</li>
+                <li>To check this, we can look at what time customers were making the most orders the previous December
+                    (i.e. December 2010), as well as the most common hours for purchases during the last 2 months (i.e.
+                    October and November 2011). Since we have data about 12 days of December 2011, we include these in
+                    the analysis as well.</li>
+            </ul>
+
+            <button onclick="toggleCode('code9')">View plotly Code</button>
+            <div id="code9" class="code-container">
+                <pre><code>
+                    # take data only about December 2010 and October, Novermber and December 2011
+                    subset = data[
+                                ((data["year"] == 2010) & (data["month"] == 12))
+                                |    
+                                ((data["year"] == 2011) & (data["month"] == 10))
+                                |
+                                ((data["year"] == 2011) & (data["month"] == 11))
+                                |
+                                ((data["year"] == 2011) & (data["month"] == 12))
+                                ]
+                    # extract the hour of purchase from InvoiceDate and add it as a column
+                    subset["hour"] = subset["InvoiceDate"].astype(str).str[11:13].astype(int)
+                     
+                    # calculate the total number of orders for each hour of the day in these months
+                    frequency = subset.groupby(["year","month","hour"]) \
+                    .agg({"InvoiceNo":"nunique"}).reset_index() \
+                    .rename({"InvoiceNo": "num_orders"}, axis = 1)
+
+                    pivot = frequency.pivot(index = "hour", columns = ["year","month"], values = ["num_orders"])
+                    pivot = pd.DataFrame(pivot.to_records()) # flattens multilevel column headings
+                    pivot["hour"] = pivot["hour"].astype(str) + ":00" # make hours more readable
+                    pivot = pivot.set_index("hour")
+                    pivot.index.name = "" # remove index name for plotting
+                    pivot.rename(columns={ # set more readable names
+                                        pivot.columns[0]:"Dec 2010",
+                                        pivot.columns[1]:"Oct 2011",
+                                        pivot.columns[2]:"Nov 2011",
+                                        pivot.columns[3]:"Dec 2011"
+                                        }, inplace = True)
+                    # Apply styling
+                    styled_df = pivot.replace(np.nan, 0).style \
+                        .background_gradient(cmap="rocket", subset=["Dec 2010"]) \
+                        .background_gradient(cmap="rocket", subset=["Oct 2011"]) \
+                        .background_gradient(cmap="rocket", subset=["Nov 2011"]) \
+                        .background_gradient(cmap="rocket", subset=["Dec 2011"]) \
+                        .format("{:.0f}")
+                    
+                    # Convert styled DataFrame to HTML and save to a file
+                    styled_df.to_html("heatmap_table.html", escape=False)
+
+                    print(styled_df)
+            </code></pre>
+            </div>
+            <button onclick="toggleCode('code10')">View plotnine Code</button>
+            <div id="code10" class="code-container">
+                <pre><code>
+                    # Transpose the DataFrame to have hours as rows and months as columns
+                    pivot_transposed = pivot.T.reset_index()
+
+                    # Rename the columns to match the required format
+                    pivot_transposed.columns = ['month', '7:00', '8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00']
+
+                    # Melt the DataFrame to long format
+                    melted_df = pivot_transposed.melt(id_vars=['month'], var_name='hour', value_name='orders')
+
+                    # Convert hour to categorical to maintain the order
+                    melted_df['hour'] = pd.Categorical(melted_df['hour'], categories=['7:00', '8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'])
+
+                    # Plot the heatmap
+                    heatmap = (
+                        ggplot(melted_df, aes(x='hour', y='month', fill='orders'))
+                        + geom_tile()
+                        + scale_fill_gradient(low="black", high="white", limits=[30, 350], breaks=[30, 190, 350], labels=["low", "medium", "high"])
+                        + theme(axis_text_x=element_text(angle=45, hjust=1),
+                            figure_size=(12, 4))
+                        + ggtitle("Total Number of Orders for Each Hour of the Day")
+                    )
+
+                    # Show the heatmap
+                    print(heatmap)
+            </code></pre>
+            </div>
+            <iframe style="height: 380px;" src="heatmap_table.html" title="Sales by Country"></iframe>
+            <p><strong>Conclusion : </strong>We can see, that the most orders are placed around midday, more
+                specifically at 12:00. Therefore, the marketing team could target their campaigns around these times to
+                maximize conversions.</p>
+        </div>
+        <div class="info">
+            <h2>Which is the Best Selling Product in Each Country?</h2>
+            <button onclick="toggleCode('code11')">View Code</button>
+            <div id="code11" class="code-container">
+                <pre><code>
+                # calculate total sales for each product in each country
+                sales_countr_descr = data.groupby(["Country", "Description"]) \
+                .agg({"ItemTotal": "sum"}) \
+                .rename({"ItemTotal":"TotalSales"},axis=1).reset_index()
+
+                # find the total sales of the best selling product in each country
+                max_sales = pd.DataFrame(sales_countr_descr.groupby("Country") \
+                ["TotalSales"].max().reset_index()) \
+                .rename({"TotalSales":"Best_Product_Total_Sales"},axis=1)
+
+                # join the two tables from above together
+                joined_df = sales_countr_descr.merge(max_sales, on = "Country", how = "left")
+
+                # in other words, find the best selling item in each country
+                joined_df = joined_df[joined_df["TotalSales"] == joined_df["Best_Product_Total_Sales"]]
+                joined_df.head()
+
+                # drop the redundant column
+                joined_df = joined_df.drop("Best_Product_Total_Sales", axis = 1)
+
+                # total sales in each country
+                country_sales = pd.DataFrame(data.groupby("Country")["ItemTotal"].sum()) \
+                .reset_index().rename({"ItemTotal":"Country_Total_Sales"}, axis = 1)
+
+                joined_df = joined_df.merge(country_sales, on = "Country", how = "inner") \
+                .rename({"Description":"Best_Selling_Product"}, axis = 1)
+
+                joined_df["%_of_Country_Sales"] = (joined_df["TotalSales"] / joined_df["Country_Total_Sales"])
+
+                styled_df = joined_df.style.background_gradient(cmap=sns.light_palette("seagreen", as_cmap=True), \
+                    subset=["%_of_Country_Sales"]) \
+                    .format({"%_of_Country_Sales":"{:.2%}",
+                            "TotalSales":"£{:,.0f}",
+                            "Country_Total_Sales":"£{:,.0f}"})
+                print(styled_df)
+            </code></pre>
+            </div>
+            <iframe style="height: 500px;" src="styled_table.html" title="Sales by Country"></iframe>
+        </div>
+        <div class="info">
+            <h2>Which product is the most common best seller?</h2>
+            <button onclick="toggleCode('code12')">View Code</button>
+            <div id="code12" class="code-container">
+                <pre><code>
+                    df_ = pd.DataFrame(joined_df["Best_Selling_Product"].value_counts()) \
+                    .rename({"Best_Selling_Product":"Best_Selling_Product_in_X_Countries"},axis=1)
+                    print(df_)
+            </code></pre>
+            </div>
+            <iframe style="height: 400px;" src="most common product.html" title="Sales by Country"></iframe>
+        </div>
+        <div class="info">
+            <h2>Which are the Most Successful Products Overall?</h2>
+            <p>A characteristic we could use to answer this is: which products of relatively high price have sold relatively high quantities. This can be easily visualized with a scatter plot of all products with total quantity sold and average unitprice on the x and y axes.
+                Products' markers to the north-east on the scatter plot suggest relatively high quantities sold at a relatively high price.</p>
+            <button onclick="toggleCode('code13')">View plotly Code</button>
+            <div id="code13" class="code-container">
+                <pre><code>
+                    # find total quantity sold and average unit price for all products
+                    products = data.groupby("Description") \
+                    .agg({"Quantity":"sum", "UnitPrice":"mean"}).reset_index()
+
+                    products = products[products["Description"].isin(["DOTCOM","Manual","Discount"]) == False] # remove for plotting
+
+                    trace = go.Scatter(
+                                        x = products["Quantity"],
+                                        y = products["UnitPrice"],
+                                        customdata = products["Description"],
+                                        hovertemplate = "%{customdata}<br>Quantity Sold: %{x}<br>UnitPrice: £%{y:.2f}<br><extra></extra>",
+                                        mode = "markers",
+                                        name = "Products",
+                                        line = dict(width = 4),
+                                        marker = dict(
+                                                    size = 10,
+                                                    color = "#1199cf"
+                                                    )
+                                        )
+
+                    scatter_data = [trace]
+
+                    layout = dict(
+                                title = "Products",
+                                titlefont = dict(size = 20),
+                                margin=dict(l=10, r=50, b=10, t=70, pad=0),
+                                xaxis= dict(title= "Quantity Sold",ticklen = 5,zeroline = False),
+                                width=1000,  
+                                height=600,
+                                yaxis= dict(title= "Unit Price")
+                                )
+                    fig = dict(data = scatter_data, layout = layout)
+
+                    iplot(fig)
+
+            </code></pre>
+            </div>
+            <button onclick="toggleCode('code14')">View plotnine Code</button>
+            <div id="code14" class="code-container">
+                <pre><code>
+                    # Create a new DataFrame for tooltips
+                    tooltip_df = products[['Description', 'Quantity', 'UnitPrice']]
+
+                    # Define the plot
+                    scatter_plot = (
+                        ggplot(products, aes(x='Quantity', y='UnitPrice')) +
+                        geom_point(size=10, color="#1199cf") +
+                        labs(title="Products", x="Quantity Sold", y="Unit Price") +
+                        theme_minimal() +
+                        theme(
+                            plot_title=element_text(size=20),
+                            axis_text_x=element_text(size=10),
+                            axis_text_y=element_text(size=10)
+                        )
+                    )
+
+                    print(scatter_plot)
+            </code></pre>
+            </div>
+            <iframe style="height: 640px;" src="most successful product overall.html" title="Sales by Country"></iframe>
+            <p><strong>Conclusion : </strong>Above we saw "REGENCY CAKESTAND 3 TIER" as the most common best seller (8 countries) and here we see it as a high selling product as well - its marker is visually separated from the other products on the plot.</p>
+
+        </div>
+        <div class="info">
+            <h2>Which Customers Contributed the Most to Total Sales?</h2>
+            <button onclick="toggleCode('code15')">View Code</button>
+            <div id="code15" class="code-container">
+                <pre><code>
+                    cust_purchases = \
+                    data.groupby("CustomerID") \
+                    .agg({"InvoiceNo": "nunique", "ItemTotal": "sum"}) \
+                    .rename({"ItemTotal":"TotalPurchases","InvoiceNo":"Number_of_Orders"},axis = 1) \
+                    .sort_values(by = "TotalPurchases", ascending = False)
+
+                    cust_purchases.head(15) # only first 15
+            </code></pre>
+            </div>
+            <iframe style="height: 430px;" src="most_contribution_of_customer.html" title="Sales by Country"></iframe>
+        </div> 
+        <div class="info">
+            <h2>How much did each customer contribute to the total sales figure in percentage terms?</h2>
+            <button onclick="toggleCode('code4')">View Code</button>
+            <div id="code4" class="code-container">
+                <pre><code>
+                    cust_purchases["Percent_of_TotalSales"] = (cust_purchases["TotalPurchases"]/data["ItemTotal"].sum()).map("{:.2%}".format)
+                    cust_purchases["TotalPurchases"] = cust_purchases["TotalPurchases"].map("£{:,.0f}".format) # format as currency
+
+                    cust_purchases.head(15) # first 15 only
+            </code></pre>
+            </div>
+            <iframe style="height: 430px;" src="most_contribution_of_customer_in_percentage.html" title="Sales by Country"></iframe>
+        </div> 
+    </div>
+
+</body>
+
+</html>
