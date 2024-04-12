@@ -14,6 +14,15 @@
             padding: 0;
         }
 
+        .header {
+            background-color: #007bff;
+            /* Blue header */
+            color: #fff;
+            /* White text */
+            padding: 2px;
+            text-align: center;
+        }
+
         .container {
             max-width: 1000px;
             margin: 0 auto;
@@ -55,6 +64,24 @@
             overflow-x: auto;
             /* Enable horizontal scrolling */
         }
+
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ccc;
+        }
+
+        .footer p {
+            margin: 5px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .footer a {
+            color: #007bff;
+            text-decoration: none;
+        }
     </style>
     <script>
         function toggleCode(codeId) {
@@ -69,7 +96,9 @@
 </head>
 
 <body>
-
+    <div class="header">
+        <h1>Data Visualization</h1>
+    </div>
     <div class="container">
         <div class="info">
             <h2>About Dataset</h2>
@@ -604,8 +633,11 @@
         </div>
         <div class="info">
             <h2>Which are the Most Successful Products Overall?</h2>
-            <p>A characteristic we could use to answer this is: which products of relatively high price have sold relatively high quantities. This can be easily visualized with a scatter plot of all products with total quantity sold and average unitprice on the x and y axes.
-                Products' markers to the north-east on the scatter plot suggest relatively high quantities sold at a relatively high price.</p>
+            <p>A characteristic we could use to answer this is: which products of relatively high price have sold
+                relatively high quantities. This can be easily visualized with a scatter plot of all products with total
+                quantity sold and average unitprice on the x and y axes.
+                Products' markers to the north-east on the scatter plot suggest relatively high quantities sold at a
+                relatively high price.</p>
             <button onclick="toggleCode('code13')">View plotly Code</button>
             <div id="code13" class="code-container">
                 <pre><code>
@@ -669,7 +701,9 @@
             </code></pre>
             </div>
             <iframe style="height: 640px;" src="most successful product overall.html" title="Sales by Country"></iframe>
-            <p><strong>Conclusion : </strong>Above we saw "REGENCY CAKESTAND 3 TIER" as the most common best seller (8 countries) and here we see it as a high selling product as well - its marker is visually separated from the other products on the plot.</p>
+            <p><strong>Conclusion : </strong>Above we saw "REGENCY CAKESTAND 3 TIER" as the most common best seller (8
+                countries) and here we see it as a high selling product as well - its marker is visually separated from
+                the other products on the plot.</p>
 
         </div>
         <div class="info">
@@ -687,11 +721,11 @@
             </code></pre>
             </div>
             <iframe style="height: 430px;" src="most_contribution_of_customer.html" title="Sales by Country"></iframe>
-        </div> 
+        </div>
         <div class="info">
             <h2>How much did each customer contribute to the total sales figure in percentage terms?</h2>
-            <button onclick="toggleCode('code4')">View Code</button>
-            <div id="code4" class="code-container">
+            <button onclick="toggleCode('code16')">View Code</button>
+            <div id="code16" class="code-container">
                 <pre><code>
                     cust_purchases["Percent_of_TotalSales"] = (cust_purchases["TotalPurchases"]/data["ItemTotal"].sum()).map("{:.2%}".format)
                     cust_purchases["TotalPurchases"] = cust_purchases["TotalPurchases"].map("£{:,.0f}".format) # format as currency
@@ -699,10 +733,21 @@
                     cust_purchases.head(15) # first 15 only
             </code></pre>
             </div>
-            <iframe style="height: 430px;" src="most_contribution_of_customer_in_percentage.html" title="Sales by Country"></iframe>
-        </div> 
+            <iframe style="height: 410px;" src="most_contribution_of_customer_in_percentage.html"
+                title="Sales by Country"></iframe>
+        </div>
+        <div class="info">
+            <p style="font-size: 20px; color: rgb(0, 0, 0); text-align: center; padding: 20px 0;">
+                <--------------------------------------------------------------------The End------------------------------------------------------------------->
+            </p>
+        </div>        
     </div>
-
+    <div class="footer">
+        <p style="font-size: 14px; color: #777;">Email me at: <a href="mailto:harsh.raj@iitg.ac.in"
+                style="text-decoration: none; color: #007bff;">harsh.raj@iitg.ac.in</a> | License: CC BY-NC-SA 4.0 | <a
+                href="https://github.com/harshrajshs/Data_visualization/blob/main/210150011.ipynb"
+                style="text-decoration: none; color: #007bff;">Source Code</a></p>
+    </div>
 </body>
 
 </html>
